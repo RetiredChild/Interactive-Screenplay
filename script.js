@@ -3,55 +3,56 @@ window.onload = () => {
   const music2 = document.getElementById('music2');
   const ambience = document.getElementById('ambience');
   const startBtn = document.getElementById('startBtn');
-  let currentMusic = 'music'; // track what's currently playing
+  let currentMusic = 'music'; // Tracks which music is currently playing
 
+  // Safely play audio
   const tryPlay = (audio) => {
-    if (!audio) return;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        const resumeAudio = () => {
+        const resume = () => {
           audio.play();
-          document.removeEventListener("click", resumeAudio);
+          document.removeEventListener('click', resume);
         };
-        document.addEventListener("click", resumeAudio);
+        document.addEventListener('click', resume);
       });
     }
   };
 
+  // Fades
   const fadeOut = (audio) => {
     return new Promise(resolve => {
-      const interval = setInterval(() => {
+      const fade = setInterval(() => {
         if (audio.volume > 0.01) {
           audio.volume -= 0.01;
         } else {
-          clearInterval(interval);
+          clearInterval(fade);
           audio.pause();
           resolve();
         }
-      }, 50);
+      }, 40);
     });
   };
 
-  const fadeIn = (audio, targetVolume = 0.4) => {
+  const fadeIn = (audio, volume = 0.5) => {
     audio.volume = 0;
     tryPlay(audio);
     return new Promise(resolve => {
-      const interval = setInterval(() => {
-        if (audio.volume < targetVolume) {
+      const fade = setInterval(() => {
+        if (audio.volume < volume) {
           audio.volume += 0.01;
         } else {
-          clearInterval(interval);
+          clearInterval(fade);
           resolve();
         }
-      }, 50);
+      }, 40);
     });
   };
 
-  const switchToMusic = async (to) => {
-    if (currentMusic === to) return;
+  const switchTo = async (target) => {
+    if (currentMusic === target) return;
 
-    if (to === 'music2') {
+    if (target === 'music2') {
       await fadeOut(music);
       await fadeIn(music2);
     } else {
@@ -59,40 +60,46 @@ window.onload = () => {
       await fadeIn(music);
     }
 
-    currentMusic = to;
+    currentMusic = target;
   };
 
-  const setupScrollTrigger = () => {
-    const triggerElement = document.getElementById("trigger");
-    if (!triggerElement) return;
+  // Scroll trigger logic
+  const setupObserver = () => {
+    const trigger = document.getElementById('trigger');
+    if (!trigger) return;
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          switchToMusic('music2');
+          switchTo('music2'); // Scrolled down into trigger
         } else {
-          switchToMusic('music');
+          switchTo('music');  // Scrolled back up out of trigger
         }
       });
-    }, { threshold: 0.5 });
+    }, {
+      threshold: 0.6
+    });
 
-    observer.observe(triggerElement);
+    observer.observe(trigger);
   };
 
+  // Button logic
   startBtn.addEventListener('click', () => {
     startBtn.style.display = 'none';
 
+    // Prepare audio
+    ambience.volume = 0.2;
     music.volume = 0;
     music2.volume = 0;
-    ambience.volume = 0.2;
 
     tryPlay(ambience);
     tryPlay(music);
     tryPlay(music2);
 
-    // Fade in music at start
-    fadeIn(music, 0.4);
+    // Fade in music 1
+    fadeIn(music, 0.5);
 
-    setupScrollTrigger();
+    // Activate scroll trigger
+    setupObserver();
   });
 };
