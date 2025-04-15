@@ -60,9 +60,5 @@ window.onload = () => {
         setupScrollTrigger();
         startBtn.style.display = 'none';
       })
-      .catch(err => {
-        console.error("Audio blocked by browser:", err);
-        alert("Tap again to start audio. iOS may require extra interaction.");
-      });
   });
 };
