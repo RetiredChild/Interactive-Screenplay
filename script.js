@@ -3,12 +3,13 @@ window.onload = () => {
   const music2 = document.getElementById('music2');
   const ambience = document.getElementById('ambience');
   const startBtn = document.getElementById('startBtn');
-  let currentMusic = 'music'; // start with music1
+
+  let currentTrack = 'music'; // "music" or "music2"
 
   const tryPlay = (audio) => {
-    const playPromise = audio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
+    const promise = audio.play();
+    if (promise !== undefined) {
+      promise.catch(() => {
         const resume = () => {
           audio.play();
           document.removeEventListener('click', resume);
@@ -18,16 +19,15 @@ window.onload = () => {
     }
   };
 
-  // Fade utility that works gradually
   const fade = (audio, toVolume, duration) => {
     const steps = 50;
     const interval = duration / steps;
     const delta = (toVolume - audio.volume) / steps;
 
     return new Promise((resolve) => {
-      let i = 0;
+      let count = 0;
       const fader = setInterval(() => {
-        if (i++ >= steps) {
+        if (count++ >= steps) {
           clearInterval(fader);
           audio.volume = toVolume;
           if (toVolume === 0) audio.pause();
@@ -39,16 +39,53 @@ window.onload = () => {
     });
   };
 
-  const transitionMusic = async (from, to) => {
-    if (currentMusic === to.id) return;
-    currentMusic = to.id;
+  const crossfade = async (from, to) => {
+    if (currentTrack === to.id) return;
+    currentTrack = to.id;
 
-    tryPlay(to); // ensure it's ready
-    to.volume = 0;
-
-    // Start fading out current music
+    // Ensure both are playing
     tryPlay(from);
-    fade(from, 0, 5000); // fade out over 5s
+    to.volume = 0;
+    to.currentTime = 0;
+    to.play(); // 👈 This guarantees it starts before fading in
 
-    // Start fading in new music after 3s
-    setTimeout
+    fade(from, 0, 5000); // fade out over 5s
+    setTimeout(() => {
+      fade(to, 0.5, 2000); // fade in over 2s, starting at 3s
+    }, 3000);
+  };
+
+  const setupObserver = () => {
+    const trigger = document.getElementById('trigger');
+    if (!trigger) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          crossfade(music, music2); // scroll down
+        } else {
+          crossfade(music2, music); // scroll up
+        }
+      });
+    }, {
+      threshold: 0.6
+    });
+
+    observer.observe(trigger);
+  };
+
+  startBtn.addEventListener('click', () => {
+    startBtn.style.display = 'none';
+
+    ambience.volume = 0.2;
+    music.volume = 0;
+    music2.volume = 0;
+
+    tryPlay(ambience);
+    tryPlay(music);
+    tryPlay(music2);
+
+    fade(music, 0.5, 2000); // fade in music1
+    setupObserver();
+  });
+};
