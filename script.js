@@ -3,9 +3,8 @@ window.onload = () => {
   const music2 = document.getElementById('music2');
   const ambience = document.getElementById('ambience');
   const startBtn = document.getElementById('startBtn');
-  let currentMusic = 'music'; // Tracks which music is currently playing
+  let currentMusic = 'music'; // Tracks what's playing
 
-  // Safely play audio
   const tryPlay = (audio) => {
     const playPromise = audio.play();
     if (playPromise !== undefined) {
@@ -19,27 +18,27 @@ window.onload = () => {
     }
   };
 
-  // Fades
   const fadeOut = (audio) => {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const fade = setInterval(() => {
         if (audio.volume > 0.01) {
           audio.volume -= 0.01;
         } else {
           clearInterval(fade);
           audio.pause();
+          audio.volume = 0;
           resolve();
         }
       }, 40);
     });
   };
 
-  const fadeIn = (audio, volume = 0.5) => {
+  const fadeIn = (audio, targetVolume = 0.5) => {
     audio.volume = 0;
     tryPlay(audio);
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const fade = setInterval(() => {
-        if (audio.volume < volume) {
+        if (audio.volume < targetVolume) {
           audio.volume += 0.01;
         } else {
           clearInterval(fade);
@@ -63,7 +62,6 @@ window.onload = () => {
     currentMusic = target;
   };
 
-  // Scroll trigger logic
   const setupObserver = () => {
     const trigger = document.getElementById('trigger');
     if (!trigger) return;
@@ -71,9 +69,9 @@ window.onload = () => {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          switchTo('music2'); // Scrolled down into trigger
+          switchTo('music2'); // scroll into trigger
         } else {
-          switchTo('music');  // Scrolled back up out of trigger
+          switchTo('music'); // scroll back up
         }
       });
     }, {
@@ -83,11 +81,9 @@ window.onload = () => {
     observer.observe(trigger);
   };
 
-  // Button logic
   startBtn.addEventListener('click', () => {
     startBtn.style.display = 'none';
 
-    // Prepare audio
     ambience.volume = 0.2;
     music.volume = 0;
     music2.volume = 0;
@@ -96,10 +92,7 @@ window.onload = () => {
     tryPlay(music);
     tryPlay(music2);
 
-    // Fade in music 1
     fadeIn(music, 0.5);
-
-    // Activate scroll trigger
     setupObserver();
   });
 };
