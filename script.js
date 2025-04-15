@@ -33,7 +33,7 @@ window.onload = () => {
     });
   };
 
-  const fadeIn = (audio, targetVolume = 0.5) => {
+  const fadeIn = (audio, targetVolume = 0.4) => {
     audio.volume = 0;
     tryPlay(audio);
     return new Promise(resolve => {
@@ -91,7 +91,7 @@ window.onload = () => {
     tryPlay(music2);
 
     // Fade in music at start
-    fadeIn(music, 0.5);
+    fadeIn(music, 0.4);
 
     setupScrollTrigger();
   });
