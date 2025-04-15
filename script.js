@@ -3,36 +3,10 @@ window.onload = () => {
   const music2 = document.getElementById('music2');
   const ambience = document.getElementById('ambience');
   const startBtn = document.getElementById('startBtn');
+  let currentMusic = 'music'; // track what's currently playing
 
-  // Fade out music1 and fade in music2
-  const fadeMusic = () => {
-    clearInterval(music.fadeOutInterval);
-    clearInterval(music2.fadeInInterval);
-
-    music.fadeOutInterval = setInterval(() => {
-      if (music.volume > 0.01) {
-        music.volume -= 0.01;
-      } else {
-        clearInterval(music.fadeOutInterval);
-        music.pause();
-      }
-    }, 50);
-
-    music2.currentTime = 0;
-    tryPlay(music2);
-    music2.fadeInInterval = setInterval(() => {
-      if (music2.volume < 0.5) {
-        music2.volume += 0.01;
-      } else {
-        clearInterval(music2.fadeInInterval);
-      }
-    }, 50);
-  };
-
-  // Use tryPlay for autoplay-safe behavior
   const tryPlay = (audio) => {
     if (!audio) return;
-    audio.volume = audio.volume || 0.5;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
@@ -45,15 +19,59 @@ window.onload = () => {
     }
   };
 
+  const fadeOut = (audio) => {
+    return new Promise(resolve => {
+      const interval = setInterval(() => {
+        if (audio.volume > 0.01) {
+          audio.volume -= 0.01;
+        } else {
+          clearInterval(interval);
+          audio.pause();
+          resolve();
+        }
+      }, 50);
+    });
+  };
+
+  const fadeIn = (audio, targetVolume = 0.5) => {
+    audio.volume = 0;
+    tryPlay(audio);
+    return new Promise(resolve => {
+      const interval = setInterval(() => {
+        if (audio.volume < targetVolume) {
+          audio.volume += 0.01;
+        } else {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 50);
+    });
+  };
+
+  const switchToMusic = async (to) => {
+    if (currentMusic === to) return;
+
+    if (to === 'music2') {
+      await fadeOut(music);
+      await fadeIn(music2);
+    } else {
+      await fadeOut(music2);
+      await fadeIn(music);
+    }
+
+    currentMusic = to;
+  };
+
   const setupScrollTrigger = () => {
-    const triggerElement = document.getElementById("trigger"); // use ID in HTML
+    const triggerElement = document.getElementById("trigger");
     if (!triggerElement) return;
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          fadeMusic();
-          observer.disconnect();
+          switchToMusic('music2');
+        } else {
+          switchToMusic('music');
         }
       });
     }, { threshold: 0.5 });
@@ -64,26 +82,17 @@ window.onload = () => {
   startBtn.addEventListener('click', () => {
     startBtn.style.display = 'none';
 
-    // Set initial volumes
     music.volume = 0;
     music2.volume = 0;
     ambience.volume = 0.2;
 
-    // Try to play all
     tryPlay(ambience);
     tryPlay(music);
-    tryPlay(music2); // will fade in later
+    tryPlay(music2);
 
-    // Fade in initial music
-    let fadeIn = setInterval(() => {
-      if (music.volume < 0.5) {
-        music.volume += 0.01;
-      } else {
-        clearInterval(fadeIn);
-      }
-    }, 50);
+    // Fade in music at start
+    fadeIn(music, 0.5);
 
-    // Set up scroll trigger
     setupScrollTrigger();
   });
 };
