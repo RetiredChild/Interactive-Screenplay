@@ -4,7 +4,6 @@ window.onload = () => {
   const ambience = document.getElementById('ambience');
   const startBtn = document.getElementById('startBtn');
 
-  // Handle music fade transition
   const fadeMusic = () => {
     let fadeOut = setInterval(() => {
       if (music.volume > 0.01) {
@@ -15,8 +14,7 @@ window.onload = () => {
       }
     }, 50);
 
-    music2.play().catch(err => console.warn("Music2 play failed:", err));
-
+    music2.play();
     let fadeIn = setInterval(() => {
       if (music2.volume < 0.5) {
         music2.volume += 0.01;
@@ -26,7 +24,6 @@ window.onload = () => {
     }, 50);
   };
 
-  // Observe scroll trigger
   const setupScrollTrigger = () => {
     const triggerParagraph = Array.from(document.querySelectorAll("#screenplay p"))
       .find(p => p.textContent.includes("She opens her bag and checks"));
@@ -43,22 +40,21 @@ window.onload = () => {
     if (triggerParagraph) observer.observe(triggerParagraph);
   };
 
-  // Start button click handler
   startBtn.addEventListener('click', () => {
-    console.log("Button clicked"); // Optional debug
-    music.load();
-    music2.load();
-    ambience.load();
-
+    // Set volumes
     music.volume = 0.5;
     music2.volume = 0;
     ambience.volume = 0.2;
 
-    Promise.all([music.play(), music2.play()])
-      .then(() => {
-        ambience.play().catch(err => console.warn("Ambience play failed:", err));
-        setupScrollTrigger();
-        startBtn.style.display = 'none';
-      })
+    // Try to play all tracks (this is inside user gesture so should work on iOS)
+    music.play();
+    music2.play();
+    ambience.play();
+
+    // Hide button immediately
+    startBtn.style.display = 'none';
+
+    // Setup scroll-based transition
+    setupScrollTrigger();
   });
 };
